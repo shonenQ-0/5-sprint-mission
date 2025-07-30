@@ -1,19 +1,24 @@
 package com.sprint.mission.discodeit.entity;
 
-import java.text.SimpleDateFormat;
+import java.io.Serializable;
+import java.time.Instant;
 import java.util.UUID;
 
-public class Channel {
-    private final UUID id;
-    private final long createdAt;
-    private long updatedAt;
+public class Channel implements Serializable {
+    private static final long serialVersionUID = 1L;
+    private UUID id;
+    private Long createdAt;
+    private Long updatedAt;
+    //
+    private ChannelType type;
     private String name;
     private String description;
 
-    public Channel(String name, String description) {
+    public Channel(ChannelType type, String name, String description) {
         this.id = UUID.randomUUID();
-        this.createdAt = System.currentTimeMillis();
-        this.updatedAt = this.createdAt;
+        this.createdAt = Instant.now().getEpochSecond();
+        //
+        this.type = type;
         this.name = name;
         this.description = description;
     }
@@ -22,43 +27,39 @@ public class Channel {
         return id;
     }
 
-    public long getCreatedAt() {
+    public Long getCreatedAt() {
         return createdAt;
     }
 
-    public long getUpdatedAt() {
+    public Long getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(long updatedAt) {
-        this.updatedAt = updatedAt;
+    public ChannelType getType() {
+        return type;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-        this.updatedAt = System.currentTimeMillis();
-    }
-
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public void update(String newName, String newDescription) {
+        boolean anyValueUpdated = false;
+        if (newName != null && !newName.equals(this.name)) {
+            this.name = newName;
+            anyValueUpdated = true;
+        }
+        if (newDescription != null && !newDescription.equals(this.description)) {
+            this.description = newDescription;
+            anyValueUpdated = true;
+        }
 
-    @Override
-    public String toString() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        final StringBuilder sb = new StringBuilder("Channel{");
-        sb.append("createdAt=").append(sdf.format(createdAt));
-        sb.append(", updatedAt=").append(sdf.format(updatedAt));
-        sb.append(", name='").append(name).append('\'');
-        sb.append('}');
-        return sb.toString();
+        if (anyValueUpdated) {
+            this.updatedAt = Instant.now().getEpochSecond();
+        }
     }
 }
