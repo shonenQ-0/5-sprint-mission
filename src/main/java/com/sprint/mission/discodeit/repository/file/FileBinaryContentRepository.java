@@ -1,9 +1,14 @@
 package com.sprint.mission.discodeit.repository.file;
 
+import com.sprint.mission.discodeit.entity.BinaryContent;
 import com.sprint.mission.discodeit.entity.User;
+import com.sprint.mission.discodeit.repository.BinaryContentRepository;
 import com.sprint.mission.discodeit.repository.UserRepository;
-
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,13 +18,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Repository;
 
 
-@Repository("fileUserRepository")
-public class FileUserRepository implements UserRepository {
+@Repository("fileBinaryContentRepository")
+public class FileBinaryContentRepository implements BinaryContentRepository {
     private final Path DIRECTORY;
     private final String EXTENSION = ".ser";
 
-    public FileUserRepository() {
-        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", User.class.getSimpleName());
+    public FileBinaryContentRepository() {
+        this.DIRECTORY = Paths.get(System.getProperty("user.dir"), "file-data-map", BinaryContent.class.getSimpleName());
         if (Files.notExists(DIRECTORY)) {
             try {
                 Files.createDirectories(DIRECTORY);
@@ -34,38 +39,38 @@ public class FileUserRepository implements UserRepository {
     }
 
     @Override
-    public User save(User user) {
-        Path path = resolvePath(user.getId());
+    public BinaryContent save(BinaryContent content) {
+        Path path = resolvePath(content.getId());
         try (
                 FileOutputStream fos = new FileOutputStream(path.toFile());
                 ObjectOutputStream oos = new ObjectOutputStream(fos)
         ) {
-            oos.writeObject(user);
+            oos.writeObject(content);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return user;
+        return content;
     }
 
     @Override
-    public Optional<User> findById(UUID id) {
-        User userNullable = null;
+    public Optional<BinaryContent> findById(UUID id) {
+        BinaryContent content = null;
         Path path = resolvePath(id);
         if (Files.exists(path)) {
             try (
                     FileInputStream fis = new FileInputStream(path.toFile());
                     ObjectInputStream ois = new ObjectInputStream(fis)
             ) {
-                userNullable = (User) ois.readObject();
+                content = (BinaryContent) ois.readObject();
             } catch (IOException | ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
-        return Optional.ofNullable(userNullable);
+        return Optional.ofNullable(content);
     }
 
     @Override
-    public List<User> findAll() {
+    public List<BinaryContent> findAllByIdIn(List<UUID> ids) {
         try {
             return Files.list(DIRECTORY)
                     .filter(path -> path.toString().endsWith(EXTENSION))
@@ -74,11 +79,12 @@ public class FileUserRepository implements UserRepository {
                                 FileInputStream fis = new FileInputStream(path.toFile());
                                 ObjectInputStream ois = new ObjectInputStream(fis)
                         ) {
-                            return (User) ois.readObject();
+                            return (BinaryContent) ois.readObject();
                         } catch (IOException | ClassNotFoundException e) {
                             throw new RuntimeException(e);
                         }
                     })
+                    .filter(content -> ids.contains(content.getId()))
                     .toList();
         } catch (IOException e) {
             throw new RuntimeException(e);
